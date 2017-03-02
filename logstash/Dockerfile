@@ -1,14 +1,29 @@
-FROM docker.elastic.co/logstash/logstash:5.2.1
+FROM openjdk:8-jre
 MAINTAINER Emanuele Disco <emanuele.disco@gmail.com>
 
-ARG LS_HOME=/usr/share/logstash
+ENV LS_VERSION=5.2.1 \
+    LS_HOME=/usr/share/logstash \
+    DEFAULT_LS_USER=logstash \
+    LS_JAVA_OPTS="-Xmx256m -Xms256m"
 
 RUN set -ex && \
-  rm -f $LS_HOME/pipeline/logstash.conf && \
-  sed -i -e 's/-Xms/#-Xms/' $LS_HOME/config/jvm.options && \
-  sed -i -e 's/-Xmx/#-Xmx/' $LS_HOME/config/jvm.options
+    useradd -ms /bin/bash $DEFAULT_LS_USER && \
+    cd /tmp && \
+    curl https://s3.ap-northeast-2.amazonaws.com/sangah-b1/logstash-${LS_VERSION}.tar.gz -o /tmp/pkg.tar.gz && \
+    tar -xf pkg.tar.gz && \
+    mkdir -p $LS_HOME && cp -a logstash-*/. $LS_HOME && \
+    chown -R $DEFAULT_LS_USER: $LS_HOME && \
+    sed -i -e 's/-Xms/#-Xms/' $LS_HOME/config/jvm.options && \
+    sed -i -e 's/-Xmx/#-Xmx/' $LS_HOME/config/jvm.options && \
+    rm -rf /tmp/*
 
 ADD pipeline/ $LS_HOME/pipeline/
 ADD config/ $LS_HOME/config/
 
+ENV PATH $LS_HOME/bin:$PATH
+USER $DEFAULT_LS_USER
+WORKDIR $LS_HOME
+
 EXPOSE 5000 5043
+
+CMD ["logstash", "-f", "/usr/share/logstash/pipeline/"]

@@ -1,0 +1,10 @@
+version: "2"
+
+services: 
+
+  cadvisor:
+    extends: 
+      file: common-services.yml
+      service: cadvisor
+    ports:
+    - "5602:8080"

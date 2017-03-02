@@ -3,17 +3,21 @@ version: "2"
 services:
   elasticsearch:
     image: ${REGISTRY_URL}/elasticsearch
-    volumes:
-      - esdata:/opt/elasticsearch/data
     extends: 
       file: common-services.yml
       service: elasticsearch
+    volumes:
+    - esdata:/opt/elasticsearch/data
 
   logstash:
     image: ${REGISTRY_URL}/logstash
     extends: 
       file: common-services.yml
       service: logstash
+    ports: 
+    - 5000:5000
+    - 5000:5000/udp
+    - 5043:5043
 
   kibana:
     image: ${REGISTRY_URL}/kibana
@@ -21,35 +25,25 @@ services:
       file: common-services.yml
       service: kibana
 
-  logspout:
-    extends: 
-      file: common-services.yml
-      service: logspout
-    network_mode: "service:logstash"
-
   nginx:
     image: ${REGISTRY_URL}/nginx-elk
     extends: 
       file: common-services.yml
       service: nginx
+    depends_on: 
+    - kibana
+    - elasticsearch
+    - logstash
+    ports:
+    - 5601:5601
+    - 9200:9200
 
-  filebeat:
-    image: ${REGISTRY_URL}/filebeat
-    extends: 
-      file: common-services.yml
-      service: filebeat
-    volumes: 
-      - fbdata:/data
-
-  headplug:
-    extends: 
-      file: common-services.yml
-      service: headplug
-
-  cadvisor:
-    extends: 
-      file: common-services.yml
-      service: cadvisor
+#   headplug:
+#     extends: 
+#       file: common-services.yml
+#       service: headplug
+#     ports:
+#     - 9100:9100
 
 volumes:
   esdata:

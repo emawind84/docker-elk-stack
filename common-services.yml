@@ -15,8 +15,6 @@ services:
 
   logstash:
     container_name: logstash-srv
-    ports:
-      - 127.0.0.1:5043:5043
     environment: 
       - LOGSPOUT=ignore
       - LS_JAVA_OPTS
@@ -25,27 +23,22 @@ services:
     container_name: kibana-srv
     environment: 
       - LOGSPOUT=ignore
-    #ports:
-    #  - 5601:5601
 
   logspout:
+    container_name: "datashipper-logspout"
     image: gliderlabs/logspout
     environment:
       - DEBUG=true
       - LOGSPOUT=ignore
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: syslog://localhost:5000
 
   nginx:
-    ports:
-      - 5601:5601
-      - 9200:9200
     environment: 
       - LOGSPOUT=ignore
 
   filebeat:
-    container_name: filebeat-srv
+    container_name: "datashipper-filebeat"
     volumes:
       - ${LOG_PATH}:/usr/local/log
     environment: 
@@ -53,8 +46,6 @@ services:
 
   headplug:
     image: mobz/elasticsearch-head:5
-    ports:
-      - 9100:9100
     environment: 
       - LOGSPOUT=ignore
 
@@ -65,7 +56,5 @@ services:
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - "5602:8080"
     environment: 
       - LOGSPOUT=ignore
