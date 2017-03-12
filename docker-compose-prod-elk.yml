@@ -2,28 +2,27 @@ version: "2"
 
 services:
   elasticsearch:
-    image: ${REGISTRY_URL}/elasticsearch
+    image: ${REGISTRY_URL}/elasticsearch:0.1
     extends: 
       file: common-services.yml
       service: elasticsearch
     volumes:
     - ${ES_DATA_HOME}:/usr/share/elasticsearch/data
+    restart: "on-failure"
 
   logstash:
-    image: ${REGISTRY_URL}/logstash
+    image: ${REGISTRY_URL}/logstash:0.1
     extends: 
       file: common-services.yml
       service: logstash
-    ports: 
-    - 5000:5000
-    - 5000:5000/udp
-    - 5043:5043
+    restart: "on-failure"
 
   kibana:
-    image: ${REGISTRY_URL}/kibana
+    image: ${REGISTRY_URL}/kibana:0.1
     extends: 
       file: common-services.yml
       service: kibana
+    restart: "on-failure"
 
   nginx:
     image: ${REGISTRY_URL}/nginx-elk
@@ -35,8 +34,12 @@ services:
     - elasticsearch
     - logstash
     ports:
-    - 5601:5601
-    - 9200:9200
+    - 5601:5601     # kibana
+    - 9200:9200     # elasticsearch
+    - 5000:5000     # logstash syslog/tcp
+    - 5000:5000/udp # logstash syslog/udp
+    - 5043:5043     # logstash beats
+    restart: "on-failure"
 
 #   headplug:
 #     extends: 
