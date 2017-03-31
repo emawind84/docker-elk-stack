@@ -1,0 +1,13 @@
+version: "2"
+
+services:
+  kibana:
+    image: ${REGISTRY_URL}/kibana:${IMAGE_TAG}
+    extends: 
+      file: common-services.yml
+      service: kibana
+    ports: 
+    - ${KB_HTTP_PORT}:5601
+    extra_hosts: 
+    - "elasticsearch:${ES_HOST}"
+    restart: "unless-stopped"
