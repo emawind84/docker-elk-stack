@@ -1,0 +1,19 @@
+actions:
+  1:
+    action: delete_snapshots
+    description: >-
+      Delete snapshots having prefix 'curator-' 
+      or defined with SNAPSHOT_NAME_PREFIX variable older than retention period.
+    options:
+      repository: ${SNAPSHOT_REPOSITORY:backups}
+      ignore_empty_list: True
+      disable_action: False
+    filters:
+    - filtertype: pattern
+      kind: prefix
+      value: ${SNAPSHOT_NAME_PREFIX:curator-}
+    - filtertype: age
+      source: creation_date
+      direction: older
+      unit: days
+      unit_count: ${SNAPSHOT_RETENTION_PERIOD:3}

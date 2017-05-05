@@ -3,8 +3,10 @@
 set -e
 
 DOCKER_COMPOSE_VERSION="1.11.2"
-CONF_ARG="-f docker-compose-prod-full.yml"
+CONF_ARG="-f docker-compose-prod-elk.yml"
 SCRIPT_BASE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+PATH=$PATH:/usr/local/bin/
+
 cd "$SCRIPT_BASE_PATH"
 
 REGISTRY_URL="$REGISTRY_URL"
@@ -34,12 +36,13 @@ echo "  up              Start the services"
 echo "  down            Stop the services"
 echo "  ps              Show the status of the services"
 echo "  logs            Follow the logs on console"
+echo "  login           Log in to a Docker registry"
 echo "  remove-all      Remove all containers"
 echo "  stop-all        Stop all containers running"
+echo "  backup          Create a snapshot of the entire cluster"
+echo "  delete-old      Remove indices older than # days, see curator action for more details"
 echo
 }
-
-CONF_ARG="-f docker-compose-prod-elk.yml"
 
 if [ $# -eq 0 ]; then
     usage
@@ -78,7 +81,11 @@ done
 echo "Arguments: $CONF_ARG"
 echo "Command: $@"
 
-if [ "$1" == "up" ]; then
+if [ "$1" == "login" ]; then
+    docker login $REGISTRY_URL
+    exit 0
+
+elif [ "$1" == "up" ]; then
     docker-compose $CONF_ARG pull
     docker-compose $CONF_ARG build --pull
     docker-compose $CONF_ARG up -d --remove-orphans
@@ -98,6 +105,16 @@ elif [ "$1" == "logs" ]; then
     shift
     docker-compose $CONF_ARG logs -f --tail 200 "$@"
     exit 0
+
+elif [ "$1" == "backup" ]; then
+    docker-compose $CONF_ARG -f docker-compose-curator.yml run curator create-snapshot.yml
+    docker-compose $CONF_ARG -f docker-compose-curator.yml run curator delete-old-snapshots.yml
+    exit 0
+
+elif [ "$1" == "delete-old" ]; then
+    docker-compose $CONF_ARG -f docker-compose-curator.yml run curator delete-old-indices.yml
+    exit 0
+
 fi
 
 docker-compose $CONF_ARG "$@"
