@@ -8,6 +8,7 @@ services:
       service: elasticsearch
     volumes:
     - ${ES_DATA_HOME}:/usr/share/elasticsearch/data
+    - ${ES_BACKUP_HOME}:/usr/share/elasticsearch/backups
     restart: "unless-stopped"
 
   logstash:
@@ -25,10 +26,12 @@ services:
     restart: "unless-stopped"
 
   nginx:
-    image: ${REGISTRY_URL}/nginx-elk
+    image: ${REGISTRY_URL}/nginx-elk:0.1-xpack
     extends: 
       file: common-services.yml
       service: nginx
+    volumes: 
+    - ${ES_HTPASSWD_PATH}:/usr/share/nginx/conf.d/.htpasswd
     depends_on: 
     - kibana
     - elasticsearch
@@ -51,3 +54,4 @@ services:
 
 volumes:
   esdata:
+  esbackup:
