@@ -40,12 +40,14 @@ usage() {
 echo "Usage:  $(basename "$0") [MODE] [OPTIONS] [COMMAND]"
 echo 
 echo "Mode:"
-echo "  --prod      ELK Stack for production"
-echo "  --dev       ELK Stack for development"
+echo "  --prod          ELK Stack for production"
+echo "  --dev           ELK Stack for development"
 echo
 echo "Options:"
 echo "  --with-cadv     Add CAdvisor service"
 echo "  --with-hub      Add encrypted connection for Kibana, hub required"
+echo "  --with-tls      Add TLS connection to ES/LS (certificates required)"
+echo "  --with-notls    Normal TCP connection (no certificates)"
 echo
 echo "Commands:"
 echo "  up              Start the services"
@@ -65,6 +67,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+WITH_TLS=false
+WITH_NOTLS=false
+
 for i in "$@"
 do
 case $i in
@@ -74,6 +79,16 @@ case $i in
         ;;
     --dev)
         CONF_ARG="-f docker-compose-dev-elk.yml"
+        shift
+        ;;
+    --with-tls)
+        CONF_ARG="$CONF_ARG -f docker-compose-with-tls.yml"
+        WITH_TLS=true
+        shift
+        ;;
+    --with-notls)
+        CONF_ARG="$CONF_ARG -f docker-compose-with-notls.yml"
+        WITH_NOTLS=true
         shift
         ;;
     --with-cadv)
@@ -93,6 +108,17 @@ case $i in
         ;;
 esac
 done
+
+if $WITH_TLS && $WITH_NOTLS; then
+    echo "You don't want to call it with both tls and notls option..."
+    usage
+    exit 1
+
+elif ! $WITH_TLS && ! $WITH_NOTLS; then
+    echo "Default to no tls (no encryption!)."
+    CONF_ARG="$CONF_ARG -f docker-compose-with-notls.yml"
+    WITH_NOTLS=true
+fi
 
 echo "Arguments: $CONF_ARG"
 echo "Command: $@"
@@ -123,15 +149,21 @@ elif [ "$1" == "logs" ]; then
     exit 0
 
 elif [ "$1" == "backup" ]; then
+    docker-compose $CONF_ARG pull
+    docker-compose $CONF_ARG build --pull
     docker-compose $CONF_ARG -f docker-compose-curator.yml run curator create-snapshot.yml
     docker-compose $CONF_ARG -f docker-compose-curator.yml run curator delete-old-snapshots.yml
     exit 0
 
 elif [ "$1" == "delete-old" ]; then
+    docker-compose $CONF_ARG pull
+    docker-compose $CONF_ARG build --pull
     docker-compose $CONF_ARG -f docker-compose-curator.yml run curator delete-old-indices.yml
     exit 0
 
 elif [ "$1" == "restore" ]; then
+    docker-compose $CONF_ARG pull
+    docker-compose $CONF_ARG build --pull
     docker-compose $CONF_ARG -f docker-compose-curator.yml run curator restore-snapshot.yml
     exit 0
 

@@ -8,7 +8,7 @@ services:
       file: common-services.yml
       service: elasticsearch
     volumes:
-    - esdata:/usr/share/elasticsearch/data
+    - ${ES_DATA_HOME}:/usr/share/elasticsearch/data
     - ${ES_BACKUP_HOME}:/usr/share/elasticsearch/backups
 
   logstash:
@@ -16,8 +16,6 @@ services:
     extends: 
       file: common-services.yml
       service: logstash
-    # volumes: 
-    # - ./logstash/pipeline:/usr/share/logstash/pipeline
 
   kibana:
     build: kibana
@@ -30,17 +28,12 @@ services:
     extends: 
       file: common-services.yml
       service: nginx
+    volumes:
+    - ${ES_HTPASSWD_PATH}:/usr/share/nginx/conf.d/.htpasswd
     depends_on: 
     - kibana
     - elasticsearch
     - logstash
-    ports:
-    - 5601:5601     # kibana
-    - 9200:9200     # elasticsearch
-    - 9300:9300     # elasticsearch
-    - 5000:5000     # logstash syslog/tcp
-    - 5000:5000/udp # logstash syslog/udp
-    - 5043:5043     # logstash beats
 
 volumes:
   esdata:

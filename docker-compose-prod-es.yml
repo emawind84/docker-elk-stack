@@ -29,6 +29,10 @@ services:
     ports:
     #- 9200:9200     # elasticsearch
     - ${ES_TRANSPORT_PORT}:9300     # elasticsearch
+    volumes:
+    - ${SSL_DIR}/server-cert.pem:/etc/nginx/ssl/nginx.crt
+    - ${SSL_DIR}/server-key.pem:/etc/nginx/ssl/nginx.key
+    - ${SSL_DIR}/ca.pem:/etc/nginx/ssl/ca.crt
     restart: "unless-stopped"
 
 volumes:
